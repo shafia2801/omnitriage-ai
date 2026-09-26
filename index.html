@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>OmniTriage AI - Real-Time Voice Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-900 text-white min-p-8 font-sans">
+    <div class="max-w-3xl mx-auto p-6 bg-slate-800 rounded-xl shadow-2xl mt-10">
+        <h1 class="text-2xl font-bold text-amber-400 mb-2">OmniTriage AI Agent (PS 05)</h1>
+        <p class="text-slate-400 mb-6">Real-Time Multimodal Voice Ingestion & Triage System</p>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">Simulate Patient Voice Input / Symptoms:</label>
+                <textarea id="symptomInput" rows="3" class="w-full p-3 rounded bg-slate-900 border border-slate-700 text-white" placeholder="Describe symptoms or talk to agent..."></textarea>
+            </div>
+            <button onclick="submitTriage()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-2 rounded transition">
+                Process Real-Time Audio/Vision Stream
+            </button>
+        </div>
+
+        <div id="outputSection" class="mt-8 hidden p-4 bg-slate-900 rounded border border-slate-700">
+            <h3 class="text-lg font-semibold text-emerald-400 mb-2">Structured Triage Output:</h3>
+            <pre id="jsonOutput" class="text-xs text-slate-300 overflow-x-auto"></pre>
+        </div>
+    </div>
+
+    <script>
+        async function submitTriage() {
+            const text = document.getElementById('symptomInput').value;
+            const response = await fetch('/api/process-triage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symptom_text: text })
+            });
+            const result = await response.json();
+            document.getElementById('outputSection').classList.remove('hidden');
+            document.getElementById('jsonOutput').innerText = JSON.stringify(result, null, 2);
+        }
+    </script>
+</body>
+</html>
