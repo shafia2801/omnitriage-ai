@@ -23,5 +23,4 @@ Follow these steps to run the project locally on your machine:
 
 ### 1. Clone the Repository
 ```bash
-git clone [https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git](https://github.com/YOUR_USERNAME/YOUR_REPOSITORY_NAME.git)
-cd YOUR_REPOSITORY_NAME
+https://github.com/shafia2801/omnitriage-ai/tree/main
