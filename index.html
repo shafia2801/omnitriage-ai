@@ -11,13 +11,13 @@
         <p class="text-slate-400 mb-6">Real-Time Multimodal Voice, Video & Text Ingestion System</p>
         
         <div class="space-y-5">
-            <!-- Simulated Real-Time Audio Token Stream -->
+            <!-- True Live Microphone Stream Input -->
             <div class="p-4 bg-slate-900 rounded border border-slate-700">
-                <label class="block text-sm font-semibold text-amber-300 mb-2">🎙️ 1. Real-Time Audio Token Stream Input:</label>
-                <button onclick="startVoiceStream()" id="micBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2">
-                    🔴 Start Live Voice Stream
+                <label class="block text-sm font-semibold text-amber-300 mb-2">🎙️ 1. Live Voice Audio Transcription:</label>
+                <button onclick="toggleSpeech()" id="micBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2">
+                    🔴 Start Speaking (Live Mic)
                 </button>
-                <p id="voiceStatus" class="text-xs text-slate-400 mt-2">Click to stream audio. Tokens will auto-transcribe in real-time.</p>
+                <p id="voiceStatus" class="text-xs text-slate-400 mt-2">Click and speak your medical query clearly into your microphone.</p>
             </div>
 
             <!-- Video / Image Multimodal Input -->
@@ -28,8 +28,8 @@
 
             <!-- Text / Symptom Description Input -->
             <div>
-                <label class="block text-sm font-semibold text-amber-300 mb-1">✍️ 3. Transcribed Audio Stream Transcript (Editable):</label>
-                <textarea id="symptomInput" rows="3" class="w-full p-3 rounded bg-slate-900 border border-slate-700 text-white text-sm" placeholder="Live voice transcript will appear here..."></textarea>
+                <label class="block text-sm font-semibold text-amber-300 mb-1">✍️ 3. Live Translated Transcript (Editable):</label>
+                <textarea id="symptomInput" rows="3" class="w-full p-3 rounded bg-slate-900 border border-slate-700 text-white text-sm" placeholder="Your spoken words will automatically appear here..."></textarea>
             </div>
 
             <button onclick="submitTriage()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-3 rounded transition shadow-lg">
@@ -44,32 +44,84 @@
     </div>
 
     <script>
-        const sampleStream = "Patient audio stream detected: Reporting severe crushing chest pain radiating to left arm with acute breathing difficulties and sudden dizziness.";
+        let recognition = null;
+        let recognizing = false;
 
-        function startVoiceStream() {
+        function toggleSpeech() {
             const micBtn = document.getElementById('micBtn');
             const voiceStatus = document.getElementById('voiceStatus');
             const inputField = document.getElementById('symptomInput');
 
-            micBtn.className = "bg-emerald-600 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2 animate-pulse";
-            micBtn.innerText = "⏹️ Streaming Audio Tokens (Sub-400ms)...";
-            voiceStatus.innerText = "Real-time audio ingestion active: Transcribing tokens...";
-            inputField.value = "";
-
-            let i = 0;
-            const speed = 25; // Speed of typing simulation
-            function typeWriter() {
-                if (i < sampleStream.length) {
-                    inputField.value += sampleStream.charAt(i);
-                    i++;
-                    setTimeout(typeWriter, speed);
-                } else {
-                    micBtn.className = "bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2";
-                    micBtn.innerText = "🔴 Start Live Voice Stream";
-                    voiceStatus.innerText = "Audio stream completed and transcribed successfully!";
-                }
+            // Check browser support
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert("Speech recognition is not supported in this browser. Please use Google Chrome on desktop or Android.");
+                return;
             }
-            typeWriter();
+
+            if (!recognizing) {
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+
+                recognition.onstart = function() {
+                    recognizing = true;
+                    micBtn.className = "bg-emerald-600 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2 animate-pulse";
+                    micBtn.innerText = "🎙️ Listening... Speak Now!";
+                    voiceStatus.innerText = "Microphone active. Speak your symptoms clearly.";
+                };
+
+                recognition.onresult = function(event) {
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            finalTranscript += event.results[i][0].transcript;
+                        } else {
+                            interimTranscript += event.results[i][0].transcript;
+                        }
+                    }
+
+                    if (finalTranscript) {
+                        inputField.value = finalTranscript;
+                    } else if (interimTranscript) {
+                        inputField.value = interimTranscript;
+                    }
+                };
+
+                recognition.onerror = function(event) {
+                    voiceStatus.innerText = "⚠️ Speech Error: " + event.error + ". Make sure mic permissions are allowed.";
+                    resetMicButton();
+                };
+
+                recognition.onend = function() {
+                    resetMicButton();
+                    if (!inputField.value) {
+                        voiceStatus.innerText = "No speech detected. Try clicking again and speaking louder.";
+                    } else {
+                        voiceStatus.innerText = "Speech translated successfully!";
+                    }
+                };
+
+                try {
+                    recognition.start();
+                } catch (e) {
+                    voiceStatus.innerText = "Error starting microphone: " + e.message;
+                    resetMicButton();
+                }
+            } else {
+                recognition.stop();
+                resetMicButton();
+            }
+        }
+
+        function resetMicButton() {
+            recognizing = false;
+            const micBtn = document.getElementById('micBtn');
+            micBtn.className = "bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2";
+            micBtn.innerText = "🔴 Start Speaking (Live Mic)";
         }
 
         async function submitTriage() {
@@ -78,7 +130,7 @@
             const fileName = fileInput.files.length > 0 ? fileInput.files[0].name : "None attached";
 
             if (!text) {
-                alert("Please start the voice stream or enter symptoms first!");
+                alert("Please speak into your microphone or type your symptoms first!");
                 return;
             }
 
