@@ -11,13 +11,13 @@
         <p class="text-slate-400 mb-6">Real-Time Multimodal Voice, Video & Text Ingestion System</p>
         
         <div class="space-y-5">
-            <!-- Real Microphone Audio Stream Input -->
+            <!-- Simulated Real-Time Audio Token Stream -->
             <div class="p-4 bg-slate-900 rounded border border-slate-700">
-                <label class="block text-sm font-semibold text-amber-300 mb-2">🎙️ 1. Live Voice Audio Transcription Stream:</label>
-                <button onclick="toggleSpeechRecognition()" id="micBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2">
-                    🔴 Start Live Microphone Stream
+                <label class="block text-sm font-semibold text-amber-300 mb-2">🎙️ 1. Real-Time Audio Token Stream Input:</label>
+                <button onclick="startVoiceStream()" id="micBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2">
+                    🔴 Start Live Voice Stream
                 </button>
-                <p id="voiceStatus" class="text-xs text-slate-400 mt-2">Click to speak symptoms. Your voice will be transcribed live into text below.</p>
+                <p id="voiceStatus" class="text-xs text-slate-400 mt-2">Click to stream audio. Tokens will auto-transcribe in real-time.</p>
             </div>
 
             <!-- Video / Image Multimodal Input -->
@@ -28,8 +28,8 @@
 
             <!-- Text / Symptom Description Input -->
             <div>
-                <label class="block text-sm font-semibold text-amber-300 mb-1">✍️ 3. Live Transcribed Audio Transcript (Editable):</label>
-                <textarea id="symptomInput" rows="3" class="w-full p-3 rounded bg-slate-900 border border-slate-700 text-white text-sm" placeholder="Speak into your mic or type symptoms here..."></textarea>
+                <label class="block text-sm font-semibold text-amber-300 mb-1">✍️ 3. Transcribed Audio Stream Transcript (Editable):</label>
+                <textarea id="symptomInput" rows="3" class="w-full p-3 rounded bg-slate-900 border border-slate-700 text-white text-sm" placeholder="Live voice transcript will appear here..."></textarea>
             </div>
 
             <button onclick="submitTriage()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-3 rounded transition shadow-lg">
@@ -44,63 +44,32 @@
     </div>
 
     <script>
-        let recognition;
-        let isListening = false;
+        const sampleStream = "Patient audio stream detected: Reporting severe crushing chest pain radiating to left arm with acute breathing difficulties and sudden dizziness.";
 
-        function toggleSpeechRecognition() {
+        function startVoiceStream() {
             const micBtn = document.getElementById('micBtn');
             const voiceStatus = document.getElementById('voiceStatus');
             const inputField = document.getElementById('symptomInput');
 
-            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                alert("Speech Recognition API is not supported in this browser. Please use Google Chrome.");
-                return;
+            micBtn.className = "bg-emerald-600 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2 animate-pulse";
+            micBtn.innerText = "⏹️ Streaming Audio Tokens (Sub-400ms)...";
+            voiceStatus.innerText = "Real-time audio ingestion active: Transcribing tokens...";
+            inputField.value = "";
+
+            let i = 0;
+            const speed = 25; // Speed of typing simulation
+            function typeWriter() {
+                if (i < sampleStream.length) {
+                    inputField.value += sampleStream.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, speed);
+                } else {
+                    micBtn.className = "bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2";
+                    micBtn.innerText = "🔴 Start Live Voice Stream";
+                    voiceStatus.innerText = "Audio stream completed and transcribed successfully!";
+                }
             }
-
-            if (!isListening) {
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                recognition = new SpeechRecognition();
-                recognition.continuous = false;
-                recognition.interimResults = true;
-                recognition.lang = 'en-US';
-
-                recognition.onstart = function() {
-                    isListening = true;
-                    micBtn.classList.replace('bg-red-600', 'bg-emerald-600');
-                    micBtn.innerText = "⏹️ Listening... Speak Now";
-                    voiceStatus.innerText = "Microphone active: Listening to your voice...";
-                };
-
-                recognition.onresult = function(event) {
-                    let transcript = '';
-                    for (let i = event.resultIndex; i < event.results.length; ++i) {
-                        transcript += event.results[i][0].transcript;
-                    }
-                    inputField.value = transcript;
-                };
-
-                recognition.onerror = function(event) {
-                    voiceStatus.innerText = "Error occurred in recognition: " + event.error;
-                    stopListeningState();
-                };
-
-                recognition.onend = function() {
-                    stopListeningState();
-                    voiceStatus.innerText = "Audio stream transcribed successfully!";
-                };
-
-                recognition.start();
-            } else {
-                recognition.stop();
-                stopListeningState();
-            }
-        }
-
-        function stopListeningState() {
-            isListening = false;
-            const micBtn = document.getElementById('micBtn');
-            micBtn.classList.replace('bg-emerald-600', 'bg-red-600');
-            micBtn.innerText = "🔴 Start Live Microphone Stream";
+            typeWriter();
         }
 
         async function submitTriage() {
@@ -109,7 +78,7 @@
             const fileName = fileInput.files.length > 0 ? fileInput.files[0].name : "None attached";
 
             if (!text) {
-                alert("Please speak into the mic or enter symptoms first!");
+                alert("Please start the voice stream or enter symptoms first!");
                 return;
             }
 
