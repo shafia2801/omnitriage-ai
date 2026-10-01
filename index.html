@@ -2,37 +2,78 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>OmniTriage AI - Real-Time Voice Agent</title>
+    <title>OmniTriage AI - Real-Time Voice & Multimodal Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-slate-900 text-white min-p-8 font-sans">
+<body class="bg-slate-900 text-white min-h-screen p-6 font-sans">
     <div class="max-w-3xl mx-auto p-6 bg-slate-800 rounded-xl shadow-2xl mt-10">
         <h1 class="text-2xl font-bold text-amber-400 mb-2">OmniTriage AI Agent (PS 05)</h1>
-        <p class="text-slate-400 mb-6">Real-Time Multimodal Voice Ingestion & Triage System</p>
+        <p class="text-slate-400 mb-6">Real-Time Multimodal Voice, Video & Text Ingestion System</p>
         
-        <div class="space-y-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Simulate Patient Voice Input / Symptoms:</label>
-                <textarea id="symptomInput" rows="3" class="w-full p-3 rounded bg-slate-900 border border-slate-700 text-white" placeholder="Describe symptoms or talk to agent..."></textarea>
+        <div class="space-y-5">
+            <!-- Audio / Voice Stream Input -->
+            <div class="p-4 bg-slate-900 rounded border border-slate-700">
+                <label class="block text-sm font-semibold text-amber-300 mb-2">🎙️ 1. Real-Time Voice / Audio Input:</label>
+                <button onclick="toggleVoiceRecording()" id="micBtn" class="bg-red-600 hover:bg-red-700 text-white font-bold px-4 py-2 rounded transition text-sm flex items-center gap-2">
+                    🔴 Start Voice Stream (Simulated Audio)
+                </button>
+                <p id="voiceStatus" class="text-xs text-slate-400 mt-2">Microphone inactive. Click to stream voice.</p>
             </div>
-            <button onclick="submitTriage()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-2 rounded transition">
-                Process Real-Time Audio/Vision Stream
+
+            <!-- Video / Image Multimodal Input -->
+            <div class="p-4 bg-slate-900 rounded border border-slate-700">
+                <label class="block text-sm font-semibold text-amber-300 mb-2">📷 2. Multimodal Vision / Video / Image Input:</label>
+                <input type="file" id="mediaInput" accept="image/*,video/*" class="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-amber-500 file:text-slate-950 hover:file:bg-amber-600"/>
+            </div>
+
+            <!-- Text / Symptom Description Input -->
+            <div>
+                <label class="block text-sm font-semibold text-amber-300 mb-1">✍️ 3. Clinical Description / Transcript:</label>
+                <textarea id="symptomInput" rows="3" class="w-full p-3 rounded bg-slate-900 border border-slate-700 text-white text-sm" placeholder="Describe symptoms or view auto-transcribed voice stream here..."></textarea>
+            </div>
+
+            <button onclick="submitTriage()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 py-3 rounded transition shadow-lg">
+                Process Multimodal Triage Stream 🚀
             </button>
         </div>
 
         <div id="outputSection" class="mt-8 hidden p-4 bg-slate-900 rounded border border-slate-700">
-            <h3 class="text-lg font-semibold text-emerald-400 mb-2">Structured Triage Output:</h3>
-            <pre id="jsonOutput" class="text-xs text-slate-300 overflow-x-auto"></pre>
+            <h3 class="text-lg font-semibold text-emerald-400 mb-2">Structured Triage JSON Output:</h3>
+            <pre id="jsonOutput" class="text-xs text-slate-300 overflow-x-auto bg-slate-950 p-3 rounded"></pre>
         </div>
     </div>
 
     <script>
+        let isRecording = false;
+        function toggleVoiceRecording() {
+            isRecording = !isRecording;
+            const btn = document.getElementById('micBtn');
+            const status = document.getElementById('voiceStatus');
+            const inputField = document.getElementById('symptomInput');
+
+            if (isRecording) {
+                btn.classList.replace('bg-red-600', 'bg-emerald-600');
+                btn.classList.replace('hover:bg-red-700', 'hover:bg-emerald-700');
+                btn.innerText = "⏹️ Stop Voice Stream (Streaming Audio Tokens...)";
+                status.innerText = "Live audio stream active: Listening to patient audio input...";
+                inputField.value = "Patient audio stream: 'Reporting severe crushing chest pain radiating to left arm with breathing difficulties.'";
+            } else {
+                btn.classList.replace('bg-emerald-600', 'bg-red-600');
+                btn.classList.replace('hover:bg-emerald-700', 'hover:bg-red-700');
+                btn.innerText = "🔴 Start Voice Stream (Simulated Audio)";
+                status.innerText = "Voice stream completed. Transcript generated.";
+            }
+        }
+
         async function submitTriage() {
             const text = document.getElementById('symptomInput').value;
+            const fileInput = document.getElementById('mediaInput');
+            const fileName = fileInput.files.length > 0 ? fileInput.files[0].name : "None attached";
+
             const response = await fetch('/api/process-triage', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ symptom_text: text })
+                body: JSON.stringify({ symptom_text: text, media_file: fileName })
             });
             const result = await response.json();
             document.getElementById('outputSection').classList.remove('hidden');
